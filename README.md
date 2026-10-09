@@ -31,7 +31,7 @@ The application is deployed and accessible at: **https://3dhkilc88dkk.manus.spac
 - **Flask-CORS**: Cross-origin resource sharing support
 
 ### Database
-- **SQLite**: Lightweight, file-based database for data persistence
+- **PostgreSQL**: Relational database accessed through SQLAlchemy
 
 ## 📁 Project Structure
 
@@ -48,8 +48,6 @@ notetaking-app/
 │   ├── static/
 │   │   ├── index.html       # Frontend application
 │   │   └── favicon.ico      # Application icon
-│   ├── database/
-│   │   └── app.db           # SQLite database file
 │   └── main.py              # Flask application entry point
 ├── venv/                    # Python virtual environment
 ├── requirements.txt         # Python dependencies
@@ -170,7 +168,7 @@ The application is configured for easy deployment with:
 - CORS enabled for cross-origin requests
 - Host binding to `0.0.0.0` for external access
 - Production-ready Flask configuration
-- Persistent SQLite database
+- PostgreSQL persistence through `DATABASE_URL`
 
 ## 🔧 Configuration
 
@@ -178,9 +176,10 @@ The application is configured for easy deployment with:
 - `FLASK_ENV`: Set to `development` for debug mode
 - `SECRET_KEY`: Flask secret key for sessions
 - `OPEN_ROUTER_KEY`: OpenRouter API key required by the translation feature
+- `DATABASE_URL`: PostgreSQL connection string (for example, `postgresql://user:password@host:5432/database`)
 
 ### Database Configuration
-- Database file: `src/database/app.db`
+- Database connection: configured through `DATABASE_URL`
 - Automatic table creation on first run
 - SQLAlchemy ORM for database operations
 
@@ -226,4 +225,4 @@ Potential improvements for future versions:
 
 ---
 
-**Built with ❤️ using Flask, SQLite, and modern web technologies**
+**Built with ❤️ using Flask, PostgreSQL, and modern web technologies**
