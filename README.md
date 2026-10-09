@@ -8,6 +8,7 @@ A modern, responsive web application for managing personal notes with a beautifu
 - **Edit Notes**: Update existing notes with real-time editing
 - **Delete Notes**: Remove notes you no longer need
 - **Search Notes**: Find notes quickly by searching titles and content
+- **Translate Notes**: Translate a note's title and content into a selected language
 - **Auto-save**: Notes are automatically saved as you type
 - **Responsive Design**: Works perfectly on desktop and mobile devices
 - **Modern UI**: Beautiful gradient design with smooth animations
@@ -42,7 +43,8 @@ notetaking-app/
 │   │   └── note.py          # Note model with database schema
 │   ├── routes/
 │   │   ├── user.py          # User API routes (template)
-│   │   └── note.py          # Note API endpoints
+│   │   ├── note.py          # Note API endpoints
+│   │   └── translate.py     # Translation API endpoint
 │   ├── static/
 │   │   ├── index.html       # Frontend application
 │   │   └── favicon.ico      # Application icon
@@ -51,6 +53,8 @@ notetaking-app/
 │   └── main.py              # Flask application entry point
 ├── venv/                    # Python virtual environment
 ├── requirements.txt         # Python dependencies
+├── prompts/
+│   └── translate_prompt.md  # Translation system prompt
 └── README.md               # This file
 ```
 
@@ -96,6 +100,22 @@ notetaking-app/
 - `PUT /api/notes/<id>` - Update a note
 - `DELETE /api/notes/<id>` - Delete a note
 - `GET /api/notes/search?q=<query>` - Search notes
+- `POST /api/translate` - Translate text into a supported target language
+
+Translation request:
+```json
+{
+  "text": "Text to translate",
+  "target_language": "Japanese"
+}
+```
+
+Translation response:
+```json
+{
+  "translation": "翻訳するテキスト"
+}
+```
 
 ### Request/Response Format
 ```json
@@ -121,6 +141,7 @@ notetaking-app/
 - **Content Textarea**: Rich text editing area
 - **Save Button**: Manual save option (auto-save also available)
 - **Delete Button**: Remove notes with confirmation
+- **Translate Controls**: Choose a target language and translate the title and content
 - **Real-time Updates**: Changes reflected immediately
 
 ### Design Elements
@@ -156,6 +177,7 @@ The application is configured for easy deployment with:
 ### Environment Variables
 - `FLASK_ENV`: Set to `development` for debug mode
 - `SECRET_KEY`: Flask secret key for sessions
+- `OPEN_ROUTER_KEY`: OpenRouter API key required by the translation feature
 
 ### Database Configuration
 - Database file: `src/database/app.db`
@@ -205,4 +227,3 @@ Potential improvements for future versions:
 ---
 
 **Built with ❤️ using Flask, SQLite, and modern web technologies**
-
