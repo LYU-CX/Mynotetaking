@@ -5,8 +5,8 @@ note_bp = Blueprint('note', __name__)
 
 @note_bp.route('/notes', methods=['GET'])
 def get_notes():
-    """Get all notes, ordered by most recently updated"""
-    notes = Note.query.order_by(Note.updated_at.desc()).all()
+    """Get pinned notes first, then order each group by most recently updated."""
+    notes = Note.query.order_by(Note.is_pinned.desc(), Note.updated_at.desc()).all()
     return jsonify([note.to_dict() for note in notes])
 
 @note_bp.route('/notes', methods=['POST'])
@@ -40,9 +40,14 @@ def update_note(note_id):
         
         if not data:
             return jsonify({'error': 'No data provided'}), 400
+
+        if 'is_pinned' in data and not isinstance(data['is_pinned'], bool):
+            return jsonify({'error': 'is_pinned must be a boolean'}), 400
         
         note.title = data.get('title', note.title)
         note.content = data.get('content', note.content)
+        if 'is_pinned' in data:
+            note.is_pinned = data['is_pinned']
         db.session.commit()
         return jsonify(note.to_dict())
     except Exception as e:
@@ -70,7 +75,6 @@ def search_notes():
     
     notes = Note.query.filter(
         (Note.title.contains(query)) | (Note.content.contains(query))
-    ).order_by(Note.updated_at.desc()).all()
+    ).order_by(Note.is_pinned.desc(), Note.updated_at.desc()).all()
     
     return jsonify([note.to_dict() for note in notes])
-

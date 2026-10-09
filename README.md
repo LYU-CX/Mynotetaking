@@ -8,6 +8,8 @@ A modern, responsive web application for managing personal notes with a beautifu
 - **Edit Notes**: Update existing notes with real-time editing
 - **Delete Notes**: Remove notes you no longer need
 - **Search Notes**: Find notes quickly by searching titles and content
+- **Pin Notes**: Keep important notes at the top of the list
+- **Word Count**: See live character and word counts while editing
 - **Translate Notes**: Translate a note's title and content into a selected language
 - **Auto-save**: Notes are automatically saved as you type
 - **Responsive Design**: Works perfectly on desktop and mobile devices
@@ -96,6 +98,7 @@ notetaking-app/
 - `POST /api/notes` - Create a new note
 - `GET /api/notes/<id>` - Get a specific note
 - `PUT /api/notes/<id>` - Update a note
+  - Include `"is_pinned": true` or `false` to pin or unpin a note
 - `DELETE /api/notes/<id>` - Delete a note
 - `GET /api/notes/search?q=<query>` - Search notes
 - `POST /api/translate` - Translate text into a supported target language
@@ -121,6 +124,7 @@ Translation response:
   "id": 1,
   "title": "My Note Title",
   "content": "Note content here...",
+  "is_pinned": false,
   "created_at": "2025-09-03T11:26:38.123456",
   "updated_at": "2025-09-03T11:27:30.654321"
 }
@@ -133,10 +137,12 @@ Translation response:
 - **New Note Button**: Create new notes instantly
 - **Notes List**: Scrollable list of all notes with previews
 - **Note Previews**: Show title, content preview, and last modified date
+- **Pin Control**: Pin or unpin a note directly from its list item
 
 ### Editor Panel
 - **Title Input**: Edit note titles
 - **Content Textarea**: Rich text editing area
+- **Live Counts**: Character and word counts update as you type
 - **Save Button**: Manual save option (auto-save also available)
 - **Delete Button**: Remove notes with confirmation
 - **Translate Controls**: Choose a target language and translate the title and content

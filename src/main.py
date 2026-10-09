@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory
 from flask_cors import CORS
+from sqlalchemy import text
 from src.models.user import db
 from src.routes.user import user_bp
 from src.routes.note import note_bp
@@ -34,6 +35,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 with app.app_context():
     db.create_all()
+    with db.engine.begin() as connection:
+        connection.execute(text(
+            'ALTER TABLE note ADD COLUMN IF NOT EXISTS '
+            'is_pinned BOOLEAN NOT NULL DEFAULT FALSE'
+        ))
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
