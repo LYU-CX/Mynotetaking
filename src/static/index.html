@@ -160,11 +160,56 @@
         }
 
         .note-title {
-            margin-bottom: 5px;
+            min-width: 0;
+            margin-bottom: 0;
             color: var(--ink);
             font-size: 0.94rem;
             font-weight: 650;
             overflow-wrap: anywhere;
+        }
+
+        .note-item-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .note-pin {
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            margin: -6px -6px 0 0;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            color: #8b93a9;
+            background: transparent;
+            font-size: 1rem;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0.65;
+            transition: all 0.2s ease;
+        }
+
+        .note-pin:hover,
+        .note-pin:focus-visible {
+            border-color: #e3e1ff;
+            color: #625bd4;
+            background: #efeeff;
+            opacity: 1;
+        }
+
+        .note-pin[aria-pressed="true"] {
+            color: #625bd4;
+            background: #efeeff;
+            opacity: 1;
+        }
+
+        .note-pin:active {
+            transform: scale(0.92);
         }
 
         .note-preview {
@@ -315,6 +360,16 @@
             padding: 15px;
             resize: vertical;
             line-height: 1.75;
+        }
+
+        .content-stats {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+            color: #8b93a9;
+            font-size: 0.77rem;
+            font-variant-numeric: tabular-nums;
         }
 
         .empty-state {
@@ -536,6 +591,11 @@
                     <div class="form-group">
                         <label class="form-label" for="noteContent">Content</label>
                         <textarea class="form-textarea" id="noteContent" placeholder="Start writing your note..."></textarea>
+                        <div class="content-stats" id="contentStats" aria-live="polite">
+                            <span id="characterCount">0 characters</span>
+                            <span aria-hidden="true">·</span>
+                            <span id="wordCount">0 words</span>
+                        </div>
                     </div>
                 </div>
 
@@ -580,7 +640,10 @@
                 };
                 
                 document.getElementById('noteTitle').addEventListener('input', autoSave);
-                document.getElementById('noteContent').addEventListener('input', autoSave);
+                document.getElementById('noteContent').addEventListener('input', () => {
+                    this.updateContentStats();
+                    autoSave();
+                });
             }
 
             async loadNotes() {
@@ -601,18 +664,25 @@
                 }
             }
 
-            renderNotesList() {
+            renderNotesList(notes = this.notes, emptyMessage = 'No notes yet. Create your first note!') {
                 const notesList = document.getElementById('notesList');
                 
-                if (this.notes.length === 0) {
-                    notesList.innerHTML = '<div class="empty-state"><p>No notes yet. Create your first note!</p></div>';
+                if (notes.length === 0) {
+                    notesList.innerHTML = `<div class="empty-state"><p>${this.escapeHtml(emptyMessage)}</p></div>`;
                     return;
                 }
 
-                notesList.innerHTML = this.notes.map(note => `
+                notesList.innerHTML = notes.map(note => `
                     <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
                          data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
-                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
+                        <div class="note-item-heading">
+                            <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
+                            <button class="note-pin" type="button"
+                                    aria-label="${note.is_pinned ? 'Unpin' : 'Pin'} note"
+                                    aria-pressed="${Boolean(note.is_pinned)}"
+                                    title="${note.is_pinned ? 'Unpin note' : 'Pin note'}"
+                                    onclick="event.stopPropagation(); noteTaker.togglePin(${note.id})">📌</button>
+                        </div>
                         <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
                         <div class="note-date">${this.formatDate(note.updated_at)}</div>
                     </div>
@@ -630,6 +700,7 @@
                 document.getElementById('noteTitle').value = note.title || '';
                 document.getElementById('noteContent').value = note.content || '';
                 document.getElementById('editorTitle').textContent = note.title || 'Untitled Note';
+                this.updateContentStats();
             }
 
             createNewNote() {
@@ -645,6 +716,7 @@
                 document.getElementById('noteTitle').value = '';
                 document.getElementById('noteContent').value = '';
                 document.getElementById('editorTitle').textContent = 'New Note';
+                this.updateContentStats();
                 document.getElementById('noteTitle').focus();
                 
                 // Remove active state from all notes
@@ -819,6 +891,36 @@
                 }
             }
 
+            async togglePin(noteId) {
+                const note = this.notes.find(item => item.id === noteId);
+                if (!note) return;
+
+                try {
+                    const response = await fetch(`/api/notes/${noteId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ is_pinned: !note.is_pinned })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Failed to update pin status');
+                    }
+
+                    this.notes = this.notes
+                        .map(item => item.id === noteId ? result : item)
+                        .sort((left, right) =>
+                            Number(Boolean(right.is_pinned)) - Number(Boolean(left.is_pinned)) ||
+                            new Date(right.updated_at) - new Date(left.updated_at)
+                        );
+                    if (this.currentNote && this.currentNote.id === noteId) {
+                        this.currentNote = result;
+                    }
+                    this.searchNotes(document.getElementById('searchBox').value);
+                } catch (error) {
+                    this.showMessage(`Error updating pin: ${error.message}`, 'error');
+                }
+            }
+
             searchNotes(query) {
                 const filteredNotes = query.trim() === '' ? this.notes : 
                     this.notes.filter(note => 
@@ -826,20 +928,26 @@
                         (note.content && note.content.toLowerCase().includes(query.toLowerCase()))
                     );
 
-                const notesList = document.getElementById('notesList');
                 if (filteredNotes.length === 0) {
-                    notesList.innerHTML = '<div class="empty-state"><p>No notes found matching your search.</p></div>';
+                    this.renderNotesList(filteredNotes, 'No notes found matching your search.');
                     return;
                 }
+                this.renderNotesList(filteredNotes);
+            }
 
-                notesList.innerHTML = filteredNotes.map(note => `
-                    <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
-                         data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
-                        <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
-                        <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
-                        <div class="note-date">${this.formatDate(note.updated_at)}</div>
-                    </div>
-                `).join('');
+            updateContentStats() {
+                const content = document.getElementById('noteContent').value;
+                const characterCount = Array.from(content).length;
+                const wordCount = typeof Intl.Segmenter === 'function'
+                    ? Array.from(
+                        new Intl.Segmenter(undefined, { granularity: 'word' }).segment(content)
+                    ).filter(segment => segment.isWordLike).length
+                    : (content.trim() ? content.trim().split(/\s+/).length : 0);
+
+                document.getElementById('characterCount').textContent =
+                    `${characterCount} ${characterCount === 1 ? 'character' : 'characters'}`;
+                document.getElementById('wordCount').textContent =
+                    `${wordCount} ${wordCount === 1 ? 'word' : 'words'}`;
             }
 
             showMessage(message, type) {
